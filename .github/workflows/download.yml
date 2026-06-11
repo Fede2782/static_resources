@@ -1,0 +1,38 @@
+name: Check firmware update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * *"
+  push:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Fetch new Play Integrity Config
+        run: |
+          bash autopif4.sh
+          mv pif.json pif/pif.json
+
+      - name: Update current version
+        if: env.need_update == 1
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull origin ${{github.ref}} --ff-only
+          git add pif/pif.json
+          git commit -m "Update Play Integrity Fix config"
+
+      - name: Push changes to repo
+        uses: ad-m/github-push-action@master
+        with:
+          tags: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
